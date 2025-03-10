@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Explorer</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+  <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      color: #333;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Video Background */
+    #video-background {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: -1;
+      opacity: 0.5; /* Fade effect */
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+      background-color: rgba(255, 255, 255, 0.5); /* Reduced opacity for more transparency */
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      color: #2c3e50;
+    }
+
+    .destination-card {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .destination-card h3 {
+      margin-top: 0;
+    }
+
+    .destination-card p {
+      margin: 10px 0;
+    }
+
+    .destination-card button {
+      background: #3498db;
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .destination-card button.visited {
+      background: #2ecc71;
+    }
+
+    .map {
+      height: 300px;
+      background: #e0e0e0;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: #666;
+    }
+
+    .calendar {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .calendar h3 {
+      margin-top: 0;
+    }
+
+    .calendar input {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      width: 100%;
+      margin-bottom: 10px;
+    }
+
+    .calendar button {
+      background: #3498db;
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .search-container {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+      width: 100%;
+    }
+
+    #search-bar {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      border: 2px solid #ccc;
+      border-radius: 5px 0 0 5px;
+      outline: none;
+    }
+
+    #search-button {
+      padding: 10px 15px;
+      background-color: #007bff;
+      border: none;
+      border-radius: 0 5px 5px 0;
+      cursor: pointer;
+      color: white;
+    }
+
+    #search-button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <!-- Video Background -->
+  <video id="video-background" autoplay muted loop>
+    <source src="https://cdn1.parksmedia.wdprapps.disney.com/vision-dam/digital/parks-platform/parks-global-assets/disney-cruise-line/experience/homepage/adventure/disney-cruise-line-disney-adventure-1280x720.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+
+  <div class="container">
+    <h1>Explorer</h1>
+    <div class="destination-card">
+      <h3>Add a New Destination</h3>
+      <input type="text" id="destinationName" placeholder="Destination Name">
+      <input type="text" id="destinationLocation" placeholder="Location">
+      <input type="date" id="travelDate">
+      <textarea id="destinationDescription" placeholder="Short Description"></textarea>
+      <button onclick="addDestination()">Add Destination</button>
+    </div>
+    <div id="destinationList"></div>
+    <div class="search-container">
+      <input type="text" id="search-bar" placeholder="Enter a location (e.g., Paris, France)" />
+      <button id="search-button">
+        <i class="fas fa-search"></i>
+      </button>
+    </div>
+    <div id="map" class="map"></div>
+    
+  </div>
+
+  <script>
+    let destinations = [];
+
+    function addDestination() {
+      const name = document.getElementById('destinationName').value;
+      const location = document.getElementById('destinationLocation').value;
+      const date = document.getElementById('travelDate').value;
+      const description = document.getElementById('destinationDescription').value;
+
+      if (name && location && date && description) {
+        const destination = {
+          name,
+          location,
+          date,
+          description,
+          visited: false
+        };
+        destinations.push(destination);
+        renderDestinations();
+        clearForm();
+      } else {
+        alert('Please fill all fields.');
+      }
+    }
+
+    function toggleVisited(index) {
+      destinations[index].visited = !destinations[index].visited;
+      renderDestinations();
+    }
+
+    function renderDestinations() {
+      const destinationList = document.getElementById('destinationList');
+      destinationList.innerHTML = '';
+      destinations.forEach((dest, index) => {
+        const card = document.createElement('div');
+        card.className = 'destination-card';
+        card.innerHTML = `
+          <h3>${dest.name}</h3>
+          <p><strong>Location:</strong> ${dest.location}</p>
+          <p><strong>Date:</strong> ${dest.date}</p>
+          <p><strong>Description:</strong> ${dest.description}</p>
+          <button class="${dest.visited ? 'visited' : ''}" onclick="toggleVisited(${index})">
+            ${dest.visited ? 'Visited' : 'Not Visited'}
+          </button>
+        `;
+        destinationList.appendChild(card);
+      });
+    }
+
+    function clearForm() {
+      document.getElementById('destinationName').value = '';
+      document.getElementById('destinationLocation').value = '';
+      document.getElementById('travelDate').value = '';
+      document.getElementById('destinationDescription').value = '';
+    }
+
+    let events = [];
+
+    function addEvent() {
+      const date = document.getElementById('eventDate').value;
+      const description = document.getElementById('eventDescription').value;
+
+      if (date && description) {
+        const event = { date, description };
+        events.push(event);
+        renderEvents();
+        clearEventForm();
+      } else {
+        alert('Please fill all fields.');
+      }
+    }
+
+    function renderEvents() {
+      const eventList = document.getElementById('eventList');
+      eventList.innerHTML = '';
+      events.forEach(event => {
+        const eventItem = document.createElement('div');
+        eventItem.className = 'destination-card';
+        eventItem.innerHTML = `
+          <p><strong>Date:</strong> ${event.date}</p>
+          <p><strong>Event:</strong> ${event.description}</p>
+        `;
+        eventList.appendChild(eventItem);
+      });
+    }
+
+    function clearEventForm() {
+      document.getElementById('eventDate').value = '';
+      document.getElementById('eventDescription').value = '';
+    }
+
+    const map = L.map('map').setView([20.5937, 78.9629], 5);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    }).addTo(map);
+
+    const marker = L.marker([20.5937, 78.9629]).addTo(map);
+
+    const geocoder = L.Control.Geocoder.nominatim();
+
+    function geocodeLocation(location) {
+      geocoder.geocode(location, function (results) {
+        if (results.length > 0) {
+          const result = results[0];
+          const center = result.center;
+          const name = result.name || result.html;
+          map.setView(center, 6);
+          marker.setLatLng(center);
+          marker.bindPopup(name).openPopup();
+        } else {
+          alert('Location not found. Please try again.');
+        }
+      });
+    }
+
+    const searchButton = document.getElementById('search-button');
+    const searchBar = document.getElementById('search-bar');
+    searchButton.addEventListener('click', function () {
+      const location = searchBar.value;
+      geocodeLocation(location);
+    });
+
+    searchBar.addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') {
+        const location = searchBar.value;
+        geocodeLocation(location);
+      }
+    });
+  </script>
+</body>
+</html>

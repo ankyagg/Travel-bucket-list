@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GoAround - Travel Itinerary</title>
+
+ 
+  <link href="https://cdn.jsdelivr.net/npm/@fullcalendar/core/main.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid/main.css" rel="stylesheet" />
+  
+
+  <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core/main.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid/main.js"></script>
+
+ 
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background-color: #006aff;
+      color: white;
+      text-align: center;
+      padding: 20px;
+    }
+
+    main {
+      padding: 20px;
+    }
+
+    #destination-management {
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: #006aff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #006aff;
+    }
+
+    #destinations-list .destination-item {
+      background-color: #f9f9f9;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 6px;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    }
+
+    #destinations-list img {
+      border-radius: 6px;
+      margin-top: 10px;
+    }
+  </style>
+
+</head>
+<body>
+
+  <header>
+    <h1>GoAround Travel Itinerary</h1>
+    <p>Plan your trips and manage your destinations!</p>
+  </header>
+
+  <main>
+   
+    <section id="destination-management">
+      <h2>Manage My Destinations</h2>
+      
+      
+      <div>
+        <input type="text" id="destination-name" placeholder="Destination Name" required>
+        <input type="text" id="destination-location" placeholder="Location (City/Country)" required>
+        <input type="date" id="destination-date" required>
+        <textarea id="destination-description" placeholder="Short description of your trip" required></textarea>
+        
+        
+        <label>
+          <input type="checkbox" id="visited-status"> Visited?
+        </label>
+
+        <input type="file" id="destination-photo" accept="image/*">
+        <textarea id="destination-notes" placeholder="Add some notes about the place"></textarea>
+        <input type="number" id="destination-rating" min="1" max="5" placeholder="Rate your experience (1-5)" />
+        
+        <button onclick="addDestination()">Add Destination</button>
+      </div>
+
+      <h3>My Destinations</h3>
+      <div id="destinations-list"></div>
+    </section>
+
+   
+    <section id="calendar">
+      <h2>My Travel Calendar</h2>
+      <div id="calendar-view"></div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Powered by GoAround</p>
+  </footer>
+
+  <script>
+    
+    let destinations = [];
+
+   
+    const calendar = new FullCalendar.Calendar(document.getElementById('calendar-view'), {
+      initialView: 'dayGridMonth', 
+      locale: 'en',
+      events: []  
+    });
+    calendar.render();
+
+  
+    function addDestination() {
+      const name = document.getElementById('destination-name').value;
+      const location = document.getElementById('destination-location').value;
+      const travelDate = document.getElementById('destination-date').value;
+      const description = document.getElementById('destination-description').value;
+      const visited = document.getElementById('visited-status').checked;
+      const notes = document.getElementById('destination-notes').value;
+      const rating = document.getElementById('destination-rating').value;
+      const photo = document.getElementById('destination-photo').files[0];
+
+      if (!name || !location || !travelDate || !description) {
+        alert('Please fill all fields!');
+        return;
+      }
+
+      const destination = {
+        name,
+        location,
+        travelDate,
+        description,
+        visited,
+        notes,
+        rating,
+        photo: photo ? URL.createObjectURL(photo) : null
+      };
+
+      destinations.push(destination);
+
+      updateDestinationsList();
+      saveDestinationsToLocalStorage();
+
+    
+      clearForm();
+    }
+
+  
+    function updateDestinationsList() {
+      const destinationsList = document.getElementById('destinations-list');
+      destinationsList.innerHTML = '';  
+
+      destinations.forEach((destination, index) => {
+        const destinationDiv = document.createElement('div');
+        destinationDiv.classList.add('destination-item');
+        
+        destinationDiv.innerHTML = `
+          <h4>${destination.name} - ${destination.location}</h4>
+          <p><strong>Travel Date:</strong> ${destination.travelDate}</p>
+          <p><strong>Description:</strong> ${destination.description}</p>
+          <p><strong>Notes:</strong> ${destination.notes}</p>
+          <p><strong>Rating:</strong> ${destination.rating} / 5</p>
+          <p><strong>Visited:</strong> ${destination.visited ? 'Yes' : 'No'}</p>
+          <img src="${destination.photo}" alt="${destination.name}" width="150" />
+          <button onclick="removeDestination(${index})">Remove</button>
+        `;
+
+        destinationsList.appendChild(destinationDiv);
+        
+        
+        calendar.addEvent({
+          title: destination.name,
+          start: destination.travelDate,
+          allDay: true
+        });
+      });
+    }
+
+    function saveDestinationsToLocalStorage() {
+      localStorage.setItem('destinations', JSON.stringify(destinations));
+    }
+
+    function loadDestinationsFromLocalStorage() {
+      const storedDestinations = localStorage.getItem('destinations');
+      if (storedDestinations) {
+        destinations = JSON.parse(storedDestinations);
+        updateDestinationsList();
+      }
+    }
+
+   
+    function clearForm() {
+      document.getElementById('destination-name').value = '';
+      document.getElementById('destination-location').value = '';
+      document.getElementById('destination-date').value = '';
+      document.getElementById('destination-description').value = '';
+      document.getElementById('visited-status').checked = false;
+      document.getElementById('destination-photo').value = '';
+      document.getElementById('destination-notes').value = '';
+      document.getElementById('destination-rating').value = '';
+    }
+
+   
+    function removeDestination(index) {
+      destinations.splice(index, 1);
+      updateDestinationsList();
+      saveDestinationsToLocalStorage();
+    }
+
+ 
+    loadDestinationsFromLocalStorage();
+  </script>
+
+</body>
+</html>

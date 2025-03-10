@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Journey Hub</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #333;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Background Carousel */
+        .carousel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .carousel-inner {
+            display: flex;
+            width: 300%; /* 3 images */
+            height: 100%;
+            transition: transform 0.5s ease-in-out;
+        }
+
+        .carousel-item {
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .carousel-item.active {
+            opacity: 1;
+        }
+
+        /* Form Section */
+        header {
+            background-color: rgba(0, 106, 255, 0.8); /* Semi-transparent header */
+            color: white;
+            text-align: center;
+            padding: 30px 0;
+            border-bottom: 8px solid #c0dfff;
+            position: relative;
+            z-index: 1;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 600;
+        }
+
+        main {
+            padding: 30px;
+            position: relative;
+            z-index: 1;
+        }
+
+        section {
+            background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent background */
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border: 8px solid rgba(192, 223, 255, 0.8); /* Semi-transparent border */
+        }
+
+        .form-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: space-between;
+        }
+
+        .form-container input,
+        .form-container textarea,
+        .form-container select,
+        .form-container button {
+            padding: 14px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 1em;
+            transition: border 0.3s;
+            background-color: rgba(255, 255, 255, 0.9); /* Semi-transparent inputs */
+        }
+
+        .form-container input:focus,
+        .form-container textarea:focus,
+        .form-container select:focus {
+            border-color: #006aff;
+        }
+
+        .form-container input,
+        .form-container textarea,
+        .form-container select {
+            width: 48%;
+        }
+
+        .form-container textarea {
+            resize: vertical;
+            height: 120px;
+        }
+
+        .form-container button {
+            width: 100%;
+            background-color: #006aff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: background-color 0.3s;
+            padding: 14px;
+            border-radius: 8px;
+        }
+
+        .form-container button:hover {
+            background-color: #0056b3;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .destination-list {
+            margin-top: 20px;
+        }
+
+        .destination-item {
+            background-color: rgba(249, 249, 249, 0.9); /* Semi-transparent background */
+            padding: 15px;
+            margin: 15px 0;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+
+        .destination-item h3 {
+            margin: 0;
+            font-size: 1.5em;
+            color: #006aff;
+        }
+
+        .destination-item p {
+            margin: 5px 0;
+            font-size: 1.1em;
+        }
+
+        .status {
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-weight: bold;
+            text-transform: capitalize;
+            display: inline-block;
+        }
+
+        .visited {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .not-visited {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .photo-upload {
+            margin-top: 10px;
+        }
+
+        .photo-upload img {
+            max-width: 100px;
+            border-radius: 8px;
+            margin-right: 10px;
+        }
+
+        .rating {
+            margin-top: 10px;
+            color: #ffc107;
+            font-size: 1.2em;
+        }
+
+        .search-filter {
+            margin-bottom: 20px;
+        }
+
+        .search-filter input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            background-color: rgba(255, 255, 255, 0.9); /* Semi-transparent input */
+        }
+
+        
+
+        @media (max-width: 768px) {
+            .form-container input,
+            .form-container textarea,
+            .form-container select {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Background Carousel -->
+    <div class="carousel">
+        <div class="carousel-inner">
+            <div class="carousel-item active" style="background-image: url('https://imgs.search.brave.com/myYIyZJ-A6i6NoJ6RryhhmzT7828VY3XTZfTQ6i1OKE/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWcu/ZnJlZXBpay5jb20v/cHJlbWl1bS1waG90/by90cmF2ZWwtdHJh/dmVsaW5nLXN5bWJv/bGljLXBpY3R1cmUt/dmFjYXRpb24tYmFj/a2dyb3VuZC00XzEw/MzIyOTgtMjQ1Ni5q/cGc_c2VtdD1haXNf/aHlicmlk');"></div>
+            <div class="carousel-item" style="background-image: url('https://4kwallpapers.com/images/walls/thumbs_3t/2146.jpg');"></div>
+            <div class="carousel-item" style="background-image: url('https://media.istockphoto.com/id/1320222450/photo/hiker-outstretches-arms-on-sunny-mountain-summit-by-rock-cairn.jpg?s=612x612&w=0&k=20&c=VeDLDc3qsUbQRjpPSFmjdP2kAVVl6HFlIHViy_vQxmI=');"></div>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <header>
+        <h1>Journey Hub</h1>
+    </header>
+
+    <main>
+        <section>
+            <h2>Add a New Destination</h2>
+            <div class="form-container">
+                <input type="text" id="location" placeholder="Destination Location" required />
+                <input type="date" id="travel-date" required />
+                <textarea id="description" placeholder="Short Description" required></textarea>
+                <input type="file" id="photo-upload" accept="image/*" class="photo-upload" />
+                <select id="rating">
+                    <option value="0">Rate this destination</option>
+                    <option value="1">⭐</option>
+                    <option value="2">⭐⭐</option>
+                    <option value="3">⭐⭐⭐</option>
+                    <option value="4">⭐⭐⭐⭐</option>
+                    <option value="5">⭐⭐⭐⭐⭐</option>
+                </select>
+                <div class="checkbox-label">
+                    <input type="checkbox" id="visited" /> 
+                    <label for="visited">Visited</label>
+                </div>
+                <button onclick="addDestination()">Add Destination</button>
+            </div>
+        </section>
+
+        <section>
+            <h2>My Destinations</h2>
+            <div class="search-filter">
+                <input type="text" id="search" placeholder="Search destinations..." oninput="filterDestinations()" />
+            </div>
+            <div id="destination-list" class="destination-list"></div>
+        </section>
+    </main>
+
+
+
+    <script>
+        // Carousel Logic
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.carousel-item');
+        const totalSlides = slides.length;
+
+        function showSlide(index) {
+            slides.forEach((slide, i) => {
+                slide.classList.remove('active');
+                if (i === index) {
+                    slide.classList.add('active');
+                }
+            });
+        }
+
+        function nextSlide() {
+            currentSlide = (currentSlide + 1) % totalSlides;
+            showSlide(currentSlide);
+        }
+
+        // Auto-play the carousel
+        setInterval(nextSlide, 3000);
+
+        // Destination Management Logic
+        let destinations = [];
+
+        function addDestination() {
+            const location = document.getElementById('location').value.trim();
+            const travelDate = document.getElementById('travel-date').value;
+            const description = document.getElementById('description').value.trim();
+            const photo = document.getElementById('photo-upload').files[0];
+            const rating = document.getElementById('rating').value;
+            const visited = document.getElementById('visited').checked;
+
+            if (!location || !travelDate || !description) {
+                alert('Please fill out all fields.');
+                return;
+            }
+
+            const status = visited ? 'visited' : 'not-visited';
+
+            const destination = {
+                location,
+                travelDate,
+                description,
+                photo: photo ? URL.createObjectURL(photo) : null,
+                rating,
+                status
+            };
+
+            destinations.push(destination);
+            renderDestinations();
+
+            document.getElementById('location').value = '';
+            document.getElementById('travel-date').value = '';
+            document.getElementById('description').value = '';
+            document.getElementById('photo-upload').value = '';
+            document.getElementById('rating').value = '0';
+            document.getElementById('visited').checked = false;
+        }
+
+        function renderDestinations(filteredDestinations = destinations) {
+            const destinationList = document.getElementById('destination-list');
+            destinationList.innerHTML = '';
+
+            filteredDestinations.forEach(destination => {
+                const destinationItem = document.createElement('div');
+                destinationItem.classList.add('destination-item');
+
+                const destinationContent = `
+                    <div>
+                        <h3>${destination.location}</h3>
+                        <p><strong>Travel Date:</strong> ${new Date(destination.travelDate).toLocaleDateString()}</p>
+                        <p><strong>Description:</strong> ${destination.description}</p>
+                        ${destination.photo ? `<div class="photo-upload"><img src="${destination.photo}" alt="${destination.location}" /></div>` : ''}
+                        ${destination.rating > 0 ? `<div class="rating">${'⭐'.repeat(destination.rating)}</div>` : ''}
+                    </div>
+                    <div class="status ${destination.status === 'visited' ? 'visited' : 'not-visited'}">
+                        ${destination.status.charAt(0).toUpperCase() + destination.status.slice(1)}
+                    </div>
+                `;
+
+                destinationItem.innerHTML = destinationContent;
+                destinationList.appendChild(destinationItem);
+            });
+        }
+
+        function filterDestinations() {
+            const searchTerm = document.getElementById('search').value.toLowerCase();
+            const filteredDestinations = destinations.filter(destination => 
+                destination.location.toLowerCase().includes(searchTerm) ||
+                destination.description.toLowerCase().includes(searchTerm)
+            );
+            renderDestinations(filteredDestinations);
+        }
+    </script>
+
+</body>
+</html>
